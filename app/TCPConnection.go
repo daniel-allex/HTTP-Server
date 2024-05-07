@@ -28,21 +28,6 @@ func connectTCP(protocol string, address string) TCPConnection {
 	return createTCPConnection(conn)
 }
 
-func (conn *TCPConnection) write(message string) {
-	_, err := conn.writer.Write([]byte(message))
-	validateResult("Failed to write", err)
-
-	err = conn.writer.Flush()
-	validateResult("Failed to flush while writing", err)
-}
-
-func (conn *TCPConnection) readLine() string {
-	read, err := conn.reader.ReadString('\n')
-	validateResult("Failed to read", err)
-
-	return read
-}
-
 func (conn *TCPConnection) Close() {
 	err := conn.conn.Close()
 	validateResult("Failed to close connection", err)
