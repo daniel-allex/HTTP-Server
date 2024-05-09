@@ -33,3 +33,10 @@ func (responseLine HTTPResponseLine) FromString(message string) HTTPStartLine {
 
 	return HTTPResponseLine{version: version, statusCode: code, statusText: statusText}
 }
+
+func getHTTPResponseLine(httpMessage HTTPMessage) *HTTPResponseLine {
+	responseLine, ok := httpMessage.startLine.(HTTPResponseLine)
+	exceptIfNotOk("Failed to cast HTTPStartLine to HTTPResponseLine", ok)
+
+	return &responseLine
+}

@@ -1,18 +1,13 @@
 package main
 
+import "strconv"
+
 type HTTPResponseBuilder struct {
 	httpMessage HTTPMessage
 }
 
-func createHTTPResponseBuilder() HTTPResponseBuilder {
-	return HTTPResponseBuilder{createEmptyHTTPMessage(emptyHTTPResponseLine())}
-}
-
-func getHTTPResponseLine(httpMessage HTTPMessage) *HTTPResponseLine {
-	responseLine, ok := httpMessage.startLine.(HTTPResponseLine)
-	exceptIfNotOk("Failed to cast HTTPStartLine to HTTPResponseLine", ok)
-
-	return &responseLine
+func createHTTPResponseBuilder() *HTTPResponseBuilder {
+	return &HTTPResponseBuilder{createEmptyHTTPMessage(emptyHTTPResponseLine())}
 }
 
 func (builder *HTTPResponseBuilder) setVersion(version string) *HTTPResponseBuilder {
@@ -43,4 +38,15 @@ func (builder *HTTPResponseBuilder) setBody(message string) *HTTPResponseBuilder
 	builder.httpMessage.body = message
 
 	return builder
+}
+
+func (builder *HTTPResponseBuilder) build() HTTPMessage {
+	bodyLength := strconv.Itoa(len(builder.httpMessage.body))
+	builder.setHeader("Content-Length", bodyLength)
+
+	if !containsKey(builder.httpMessage.headers, "Content-Type") {
+		builder.setHeader("Content-Type", "text/plain")
+	}
+
+	return builder.httpMessage
 }

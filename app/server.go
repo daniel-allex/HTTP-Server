@@ -2,18 +2,28 @@ package main
 
 import (
 	"fmt"
+	"strings"
 )
 
-func handleClient(connection HTTPConnection) {
+func handleClient(connection *HTTPConnection) {
 	defer connection.Close()
 
+	println("got here")
 	messageContent := connection.nextRequest()
+	println("got request")
+	requestLine := getHTTPRequestLine(messageContent)
+	_, body, _ := strings.Cut(requestLine.version, "/echo/")
 
-	if messageContent.path == "/" {
-		connection.WriteSuccessResponse("OK")
-	} else {
-		connection.WriteFailedResponse("Not Found")
-	}
+	response := createHTTPResponseBuilder().
+		setVersion("HTTP/1.1").
+		setStatusCode(200).
+		setStatusText("OK").
+		setBody(body).
+		build()
+
+	connection.sendResponse(response)
+
+	println("got to end")
 }
 
 func main() {

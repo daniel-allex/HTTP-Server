@@ -17,7 +17,7 @@ type HTTPMessage struct {
 	body      string
 }
 
-func (httpMessage *HTTPMessage) writeHTTPMessage(writer bufio.Writer) {
+func (httpMessage *HTTPMessage) writeHTTPMessage(writer *bufio.Writer) {
 	writeLine(writer, httpMessage.startLine.ToString())
 
 	for k, v := range httpMessage.headers {
@@ -28,84 +28,81 @@ func (httpMessage *HTTPMessage) writeHTTPMessage(writer bufio.Writer) {
 	write(writer, httpMessage.body)
 }
 
-func (httpMessage *HTTPMessage) parseStartLine(reader bufio.Reader) HTTPStartLine {
-	return httpMessage.startLine.FromString(readLine(reader))
+func (httpMessage *HTTPMessage) parseStartLine(scanner *bufio.Scanner) HTTPStartLine {
+	firstLine := readLine(scanner)
+
+	println(firstLine)
+	return httpMessage.startLine.FromString(firstLine)
 }
 
-func parseHeaders(reader bufio.Reader) map[string]string {
-	var headers map[string]string
+func parseHeaders(scanner *bufio.Scanner) map[string]string {
+	headers := map[string]string{}
 
-	nextLine := readLine(reader)
+	nextLine := readLine(scanner)
 	for nextLine != "" {
+		println(nextLine)
 		key, val, _ := strings.Cut(nextLine, ": ")
 		headers[key] = val
 
-		nextLine = readLine(reader)
+		nextLine = readLine(scanner)
 	}
 
 	return headers
 }
 
-func parseBodyByChunks(reader bufio.Reader) string {
-	nextBytes := readLine(reader)
-
+func parseBodyByChunks(scanner *bufio.Scanner) string {
 	var sb strings.Builder
-	for nextBytes != "0" {
-		sb.WriteString(readLine(reader))
-		nextBytes = readLine(reader)
+	for nextBytes := readLine(scanner); nextBytes != "0"; {
+		sb.WriteString(readLine(scanner))
 	}
 
-	// Discard EOF
-	readLine(reader)
+	readLine(scanner)
 
 	return sb.String()
 }
 
-func parseBodyByLength(reader bufio.Reader, length int) string {
-	bytes, err := reader.Peek(length)
-	validateResult("Failed to read body by content length", err)
-
-	return string(bytes)
+func parseBodyByLength(scanner *bufio.Scanner, length int) string {
+	return (readLine(scanner))[:length]
 }
 
-func parseBodyNoEOF(reader bufio.Reader) string {
-	var buffer []byte
-	_, err := reader.Read(buffer)
-	validateResult("Failed to read body without EOF", err)
-
-	return string(buffer)
+func parseBodyNoEOF(scanner *bufio.Scanner) string {
+	return readLine(scanner)
 }
 
-func (httpMessage *HTTPMessage) parseBody(reader bufio.Reader) string {
+func (httpMessage *HTTPMessage) parseBody(scanner *bufio.Scanner) string {
 	encodingType, hasEncoding := httpMessage.headers["Transfer-Encoding"]
 	if hasEncoding && encodingType == "chunked" {
-		return parseBodyByChunks(reader)
+		return parseBodyByChunks(scanner)
 	}
 
 	contentLength, hasLength := httpMessage.headers["ContentLength"]
 	if hasLength {
 		length, err := strconv.Atoi(contentLength)
 		validateResult("Failed to convert content length to int", err)
-		return parseBodyByLength(reader, length)
+		return parseBodyByLength(scanner, length)
 	}
 
-	return parseBodyNoEOF(reader)
+	return parseBodyNoEOF(scanner)
 }
 
 func createEmptyHTTPMessage(startLine HTTPStartLine) HTTPMessage {
-	var headers map[string]string
+	headers := map[string]string{}
 	return HTTPMessage{startLine: startLine, headers: headers, body: ""}
 }
 
-func (httpMessage *HTTPMessage) readHTTPMessage(reader bufio.Reader) {
-	httpMessage.startLine = httpMessage.parseStartLine(reader)
-	httpMessage.headers = parseHeaders(reader)
-	httpMessage.body = httpMessage.parseBody(reader)
+func (httpMessage *HTTPMessage) scanHTTPMessage(scanner *bufio.Scanner) {
+	httpMessage.startLine = httpMessage.parseStartLine(scanner)
+	println("got start line")
+	println(httpMessage.startLine.ToString())
+	httpMessage.headers = parseHeaders(scanner)
+	println("got headers")
+	httpMessage.body = httpMessage.parseBody(scanner)
+	println("got body")
 }
 
-func parseHTTPMessage(startLine HTTPStartLine, reader bufio.Reader) HTTPMessage {
+func parseHTTPMessage(startLine HTTPStartLine, scanner *bufio.Scanner) HTTPMessage {
 	httpMessage := createEmptyHTTPMessage(startLine)
-	httpMessage.readHTTPMessage(reader)
+	httpMessage.scanHTTPMessage(scanner)
 
 	return httpMessage
 }

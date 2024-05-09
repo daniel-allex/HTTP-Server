@@ -6,29 +6,39 @@ import (
 )
 
 type TCPConnection struct {
-	reader bufio.Reader
-	writer bufio.Writer
-	conn   net.Conn
+	scanner *bufio.Scanner
+	writer  *bufio.Writer
+	conn    *net.Conn
 }
 
-func createTCPConnection(conn net.Conn) TCPConnection {
-	reader := bufio.NewReader(conn)
-	writer := bufio.NewWriter(conn)
+func createTCPConnection(conn *net.Conn) *TCPConnection {
+	connection := *conn
+	scanner := bufio.NewScanner(connection)
+	writer := bufio.NewWriter(connection)
 
-	return TCPConnection{reader: *reader, writer: *writer, conn: conn}
+	return &TCPConnection{scanner: scanner, writer: writer, conn: conn}
 }
 
-func connectTCP(protocol string, address string) TCPConnection {
+func connectTCP(protocol string, address string) *TCPConnection {
 	l, err := net.Listen(protocol, address)
 	validateResult("Failed to bind to port "+address, err)
 
 	conn, err := l.Accept()
 	validateResult("Error accepting connection", err)
 
-	return createTCPConnection(conn)
+	return createTCPConnection(&conn)
 }
 
 func (conn *TCPConnection) Close() {
-	err := conn.conn.Close()
+	connection := *conn.conn
+	err := connection.Close()
 	validateResult("Failed to close connection", err)
+}
+
+func (conn *TCPConnection) Scanner() *bufio.Scanner {
+	return conn.scanner
+}
+
+func (conn *TCPConnection) Writer() *bufio.Writer {
+	return conn.writer
 }
