@@ -96,7 +96,7 @@ func (httpMessage *HTTPMessage) scanHTTPMessage(scanner *bufio.Scanner) {
 	println(httpMessage.startLine.ToString())
 	httpMessage.headers = parseHeaders(scanner)
 	println("got headers")
-	httpMessage.body = httpMessage.parseBody(scanner)
+	// httpMessage.body = httpMessage.parseBody(scanner)
 	println("got body")
 }
 
