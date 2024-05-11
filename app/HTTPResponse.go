@@ -34,9 +34,25 @@ func (responseLine HTTPResponseLine) FromString(message string) HTTPStartLine {
 	return HTTPResponseLine{version: version, statusCode: code, statusText: statusText}
 }
 
-func getHTTPResponseLine(httpMessage HTTPMessage) *HTTPResponseLine {
-	responseLine, ok := httpMessage.startLine.(HTTPResponseLine)
-	exceptIfNotOk("Failed to cast HTTPStartLine to HTTPResponseLine", ok)
+func (responseLine HTTPResponseLine) setVersion(version string) HTTPResponseLine {
+	responseLine.version = version
 
-	return &responseLine
+	return responseLine
+}
+
+func (responseLine HTTPResponseLine) setStatusCode(statusCode int) HTTPResponseLine {
+	responseLine.statusCode = statusCode
+
+	return responseLine
+}
+
+func (responseLine HTTPResponseLine) setStatusText(statusText string) HTTPResponseLine {
+	responseLine.statusText = statusText
+
+	return responseLine
+}
+
+func getHTTPResponseLine(httpMessage *HTTPMessage) HTTPResponseLine {
+	responseLine := httpMessage.startLine.(HTTPResponseLine)
+	return responseLine
 }

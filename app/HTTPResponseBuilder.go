@@ -3,7 +3,7 @@ package main
 import "strconv"
 
 type HTTPResponseBuilder struct {
-	httpMessage HTTPMessage
+	httpMessage *HTTPMessage
 }
 
 func createHTTPResponseBuilder() *HTTPResponseBuilder {
@@ -11,19 +11,19 @@ func createHTTPResponseBuilder() *HTTPResponseBuilder {
 }
 
 func (builder *HTTPResponseBuilder) setVersion(version string) *HTTPResponseBuilder {
-	getHTTPResponseLine(builder.httpMessage).version = version
+	builder.httpMessage.startLine = getHTTPResponseLine(builder.httpMessage).setVersion(version)
 
 	return builder
 }
 
 func (builder *HTTPResponseBuilder) setStatusCode(statusCode int) *HTTPResponseBuilder {
-	getHTTPResponseLine(builder.httpMessage).statusCode = statusCode
+	builder.httpMessage.startLine = getHTTPResponseLine(builder.httpMessage).setStatusCode(statusCode)
 
 	return builder
 }
 
 func (builder *HTTPResponseBuilder) setStatusText(statusText string) *HTTPResponseBuilder {
-	getHTTPResponseLine(builder.httpMessage).statusText = statusText
+	builder.httpMessage.startLine = getHTTPResponseLine(builder.httpMessage).setStatusText(statusText)
 
 	return builder
 }
@@ -40,7 +40,7 @@ func (builder *HTTPResponseBuilder) setBody(message string) *HTTPResponseBuilder
 	return builder
 }
 
-func (builder *HTTPResponseBuilder) build() HTTPMessage {
+func (builder *HTTPResponseBuilder) build() *HTTPMessage {
 	bodyLength := strconv.Itoa(len(builder.httpMessage.body))
 	builder.setHeader("Content-Length", bodyLength)
 

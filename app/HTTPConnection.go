@@ -8,11 +8,11 @@ func connectHTTP(protocol string, address string) *HTTPConnection {
 	return &HTTPConnection{connectTCP(protocol, address)}
 }
 
-func (httpConn *HTTPConnection) nextRequest() HTTPMessage {
+func (httpConn *HTTPConnection) nextRequest() *HTTPMessage {
 	return parseHTTPRequest(httpConn.conn.Scanner())
 }
 
-func (httpConn *HTTPConnection) sendResponse(httpMessage HTTPMessage) {
+func (httpConn *HTTPConnection) sendResponse(httpMessage *HTTPMessage) {
 	writer := httpConn.conn.Writer()
 	httpMessage.writeHTTPMessage(writer)
 	err := writer.Flush()

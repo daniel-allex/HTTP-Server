@@ -30,13 +30,13 @@ func (requestLine HTTPRequestLine) FromString(message string) HTTPStartLine {
 	return HTTPRequestLine{method: method, path: path, version: version}
 }
 
-func parseHTTPRequest(scanner *bufio.Scanner) HTTPMessage {
+func parseHTTPRequest(scanner *bufio.Scanner) *HTTPMessage {
 	return parseHTTPMessage(emptyHTTPRequestLine(), scanner)
 }
 
-func getHTTPRequestLine(httpMessage HTTPMessage) *HTTPRequestLine {
+func getHTTPRequestLine(httpMessage *HTTPMessage) HTTPRequestLine {
 	requestLine, ok := httpMessage.startLine.(HTTPRequestLine)
 	exceptIfNotOk("Failed to cast HTTPStartLine to HTTPRequestLine", ok)
 
-	return &requestLine
+	return requestLine
 }

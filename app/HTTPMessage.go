@@ -30,8 +30,6 @@ func (httpMessage *HTTPMessage) writeHTTPMessage(writer *bufio.Writer) {
 
 func (httpMessage *HTTPMessage) parseStartLine(scanner *bufio.Scanner) HTTPStartLine {
 	firstLine := readLine(scanner)
-
-	println(firstLine)
 	return httpMessage.startLine.FromString(firstLine)
 }
 
@@ -40,7 +38,6 @@ func parseHeaders(scanner *bufio.Scanner) map[string]string {
 
 	nextLine := readLine(scanner)
 	for nextLine != "" {
-		println(nextLine)
 		key, val, _ := strings.Cut(nextLine, ": ")
 		headers[key] = val
 
@@ -85,22 +82,18 @@ func (httpMessage *HTTPMessage) parseBody(scanner *bufio.Scanner) string {
 	return parseBodyNoEOF(scanner)
 }
 
-func createEmptyHTTPMessage(startLine HTTPStartLine) HTTPMessage {
+func createEmptyHTTPMessage(startLine HTTPStartLine) *HTTPMessage {
 	headers := map[string]string{}
-	return HTTPMessage{startLine: startLine, headers: headers, body: ""}
+	return &HTTPMessage{startLine: startLine, headers: headers, body: ""}
 }
 
 func (httpMessage *HTTPMessage) scanHTTPMessage(scanner *bufio.Scanner) {
 	httpMessage.startLine = httpMessage.parseStartLine(scanner)
-	println("got start line")
-	println(httpMessage.startLine.ToString())
 	httpMessage.headers = parseHeaders(scanner)
-	println("got headers")
 	// httpMessage.body = httpMessage.parseBody(scanner)
-	println("got body")
 }
 
-func parseHTTPMessage(startLine HTTPStartLine, scanner *bufio.Scanner) HTTPMessage {
+func parseHTTPMessage(startLine HTTPStartLine, scanner *bufio.Scanner) *HTTPMessage {
 	httpMessage := createEmptyHTTPMessage(startLine)
 	httpMessage.scanHTTPMessage(scanner)
 
