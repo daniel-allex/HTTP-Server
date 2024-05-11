@@ -39,7 +39,7 @@ func parseHeaders(scanner *bufio.Scanner) map[string]string {
 	nextLine := readLine(scanner)
 	for nextLine != "" {
 		key, val, _ := strings.Cut(nextLine, ": ")
-		headers[key] = val
+		headers[strings.ToLower(key)] = val
 
 		nextLine = readLine(scanner)
 	}

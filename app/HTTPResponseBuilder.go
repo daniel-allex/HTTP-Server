@@ -1,6 +1,9 @@
 package main
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 type HTTPResponseBuilder struct {
 	httpMessage *HTTPMessage
@@ -29,7 +32,7 @@ func (builder *HTTPResponseBuilder) setStatusText(statusText string) *HTTPRespon
 }
 
 func (builder *HTTPResponseBuilder) setHeader(key string, val string) *HTTPResponseBuilder {
-	builder.httpMessage.headers[key] = val
+	builder.httpMessage.headers[strings.ToLower(key)] = val
 
 	return builder
 }
@@ -42,10 +45,10 @@ func (builder *HTTPResponseBuilder) setBody(message string) *HTTPResponseBuilder
 
 func (builder *HTTPResponseBuilder) build() *HTTPMessage {
 	bodyLength := strconv.Itoa(len(builder.httpMessage.body))
-	builder.setHeader("Content-Length", bodyLength)
+	builder.setHeader("content-length", bodyLength)
 
-	if !containsKey(builder.httpMessage.headers, "Content-Type") {
-		builder.setHeader("Content-Type", "text/plain")
+	if !containsKey(builder.httpMessage.headers, "content-type") {
+		builder.setHeader("content-type", "text/plain")
 	}
 
 	return builder.httpMessage

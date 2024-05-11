@@ -5,6 +5,16 @@ import (
 	"strings"
 )
 
+func pathFromEndPoint(endPoint string, route string) *string {
+	_, path, success := strings.Cut(route, endPoint)
+
+	if success {
+		return &path
+	} else {
+		return nil
+	}
+}
+
 func handleClient(connection *HTTPConnection) {
 	defer connection.Close()
 
@@ -12,12 +22,14 @@ func handleClient(connection *HTTPConnection) {
 	requestLine := getHTTPRequestLine(messageContent)
 
 	body := ""
-	success := false
-	if requestLine.path == "/" {
-		body = ""
-		success = true
+	success := true
+	if path := pathFromEndPoint("/echo", requestLine.path); path != nil {
+		body = strings.TrimLeft(*path, "/")
+	} else if pathFromEndPoint("/user-agent", requestLine.path) != nil {
+		body = messageContent.headers["user-agent"]
+	} else if *pathFromEndPoint("/", requestLine.path) == "" {
 	} else {
-		_, body, success = strings.Cut(requestLine.path, "/echo/")
+		success = false
 	}
 
 	var response *HTTPMessage
