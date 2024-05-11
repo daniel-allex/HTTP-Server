@@ -1,11 +1,13 @@
 package main
 
+import "net"
+
 type HTTPConnection struct {
 	conn *TCPConnection
 }
 
-func connectHTTP(protocol string, address string) *HTTPConnection {
-	return &HTTPConnection{connectTCP(protocol, address)}
+func acceptHTTPConnection(listener *net.Listener) *HTTPConnection {
+	return &HTTPConnection{acceptTCPConnection(listener)}
 }
 
 func (httpConn *HTTPConnection) nextRequest() *HTTPMessage {

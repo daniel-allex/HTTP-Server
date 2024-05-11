@@ -19,13 +19,15 @@ func createTCPConnection(conn *net.Conn) *TCPConnection {
 	return &TCPConnection{scanner: scanner, writer: writer, conn: conn}
 }
 
-func connectTCP(protocol string, address string) *TCPConnection {
-	l, err := net.Listen(protocol, address)
+func listenTCPConnection(address string) *net.Listener {
+	listener, err := net.Listen("tcp", address)
 	validateResult("Failed to bind to port "+address, err)
+	return &listener
+}
 
-	conn, err := l.Accept()
+func acceptTCPConnection(listener *net.Listener) *TCPConnection {
+	conn, err := (*listener).Accept()
 	validateResult("Error accepting connection", err)
-
 	return createTCPConnection(&conn)
 }
 

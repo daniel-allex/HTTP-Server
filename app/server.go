@@ -15,48 +15,57 @@ func pathFromEndPoint(endPoint string, route string) *string {
 	}
 }
 
-func handleClient(connection *HTTPConnection) {
-	defer connection.Close()
-
-	messageContent := connection.nextRequest()
-	requestLine := getHTTPRequestLine(messageContent)
+func bodyFromMessage(message *HTTPMessage) *string {
+	requestLine := getHTTPRequestLine(message)
 
 	body := ""
-	success := true
 	if path := pathFromEndPoint("/echo", requestLine.path); path != nil {
 		body = strings.TrimLeft(*path, "/")
 	} else if pathFromEndPoint("/user-agent", requestLine.path) != nil {
-		body = messageContent.headers["user-agent"]
+		body = message.headers["user-agent"]
 	} else if *pathFromEndPoint("/", requestLine.path) == "" {
 	} else {
-		success = false
+		return nil
 	}
 
-	var response *HTTPMessage
-	if success {
-		response = createHTTPResponseBuilder().
+	return &body
+}
+
+func responseFromBody(body *string) *HTTPMessage {
+	if body != nil {
+		return createHTTPResponseBuilder().
 			setVersion("HTTP/1.1").
 			setStatusCode(200).
 			setStatusText("OK").
-			setBody(body).
+			setBody(*body).
 			build()
 	} else {
-		response = createHTTPResponseBuilder().
+		return createHTTPResponseBuilder().
 			setVersion("HTTP/1.1").
 			setStatusCode(404).
 			setStatusText("Not Found").
 			build()
 	}
+}
 
-	connection.sendResponse(response)
+func handleClient(connection *HTTPConnection) {
+	defer connection.Close()
+
+	for {
+		messageContent := connection.nextRequest()
+		body := bodyFromMessage(messageContent)
+		response := responseFromBody(body)
+		connection.sendResponse(response)
+	}
 }
 
 func main() {
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Println("Logs from your program will appear here!")
 
-	conn := connectHTTP("tcp", "0.0.0.0:4221")
-
-	handleClient(conn)
-
+	listener := listenTCPConnection("0.0.0.0:4221")
+	for {
+		conn := acceptHTTPConnection(listener)
+		go handleClient(conn)
+	}
 }
