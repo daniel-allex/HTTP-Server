@@ -14,7 +14,7 @@ func responseFromRequest(request *HTTPMessage, filePath string) *HTTPMessage {
 		return createNotFoundHTTPResponseBuilder().build()
 	}
 
-	return endPointDataToResponse(*endPointData, request, filePath)
+	return endPointDataToResponseBuilder(*endPointData, request, filePath).compress(request).build()
 }
 
 func handleClient(connection *HTTPConnection, filePath string) {
