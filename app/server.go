@@ -20,12 +20,12 @@ func responseFromRequest(request *HTTPMessage, filePath string) *HTTPMessage {
 func handleClient(connection *HTTPConnection, filePath string) {
 	defer connection.Close()
 
-	for {
-		request := connection.nextRequest()
-		response := responseFromRequest(request, filePath)
-		printInputOutput(request, response)
-		connection.sendResponse(response)
-	}
+	// for {
+	request := connection.nextRequest()
+	response := responseFromRequest(request, filePath)
+	printInputOutput(request, response)
+	connection.sendResponse(response)
+	// }
 }
 
 func closeListener(listener *net.Listener) {

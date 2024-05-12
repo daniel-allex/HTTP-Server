@@ -39,7 +39,7 @@ func userAgentEndPoint(request *HTTPMessage) *HTTPMessage {
 }
 
 func filesEndPoint(relPath string, absPath string) *HTTPMessage {
-	filePath := absPath + relPath
+	filePath := absPath + "/" + relPath
 	fileContent, err := os.ReadFile(filePath)
 
 	if err != nil {
