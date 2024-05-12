@@ -35,7 +35,7 @@ func (requestLine HTTPRequestLine) FromString(message string) HTTPStartLine {
 		path = split[1]
 		version = split[2]
 	} else {
-		println("[WARNING] HTTP start line is empty")
+		warn("HTTP start line is empty")
 	}
 
 	return HTTPRequestLine{method: method, path: path, version: version}

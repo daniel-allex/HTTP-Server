@@ -20,8 +20,12 @@ func exceptIfNotOk(message string, ok bool) {
 }
 
 func throwException(message string) {
-	fmt.Println(message)
+	fmt.Println("[ERROR] " + message)
 	os.Exit(1)
+}
+
+func warn(message string) {
+	fmt.Println("[WARN] " + message)
 }
 
 func containsKey[K comparable, V any](m map[K]V, k K) bool {
