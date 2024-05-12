@@ -21,14 +21,16 @@ func handleClient(connection *HTTPConnection, filePath string) {
 	defer connection.Close()
 
 	for {
-		messageContent := connection.nextRequest()
-		response := responseFromRequest(messageContent, filePath)
+		request := connection.nextRequest()
+		response := responseFromRequest(request, filePath)
+		printInputOutput(request, response)
 		connection.sendResponse(response)
 	}
 }
 
 func closeListener(listener *net.Listener) {
 	err := (*listener).Close()
+	println("Closing listener")
 	validateResult("Failed to close listener", err)
 }
 

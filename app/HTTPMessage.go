@@ -32,12 +32,29 @@ func (httpMessage *HTTPMessage) writeHTTPMessage(writer *bufio.Writer) {
 func (httpMessage *HTTPMessage) printHTTPMessage() {
 	writer := bufio.NewWriter(os.Stdout)
 	httpMessage.writeHTTPMessage(writer)
-	println()
-	writer.Flush()
+	err := writer.Flush()
+	validateResult("Failed to flush writer to STDOUT", err)
+}
+
+func printInputOutput(request *HTTPMessage, response *HTTPMessage) {
+	writer := bufio.NewWriter(os.Stdout)
+	write(writer, "==============================\n")
+	write(writer, "Request:\n")
+	request.writeHTTPMessage(writer)
+	write(writer, "------------------------------\n")
+	write(writer, "Response:\n")
+	response.writeHTTPMessage(writer)
+	write(writer, "==============================\n")
+
+	err := writer.Flush()
+	validateResult("Failed to flush writer to STDOUT", err)
+
 }
 
 func (httpMessage *HTTPMessage) parseStartLine(scanner *bufio.Scanner) HTTPStartLine {
 	firstLine := readLine(scanner)
+	println("First Line:")
+	println(firstLine)
 	return httpMessage.startLine.FromString(firstLine)
 }
 
@@ -45,11 +62,14 @@ func parseHeaders(scanner *bufio.Scanner) map[string]string {
 	headers := map[string]string{}
 
 	nextLine := readLine(scanner)
+	println("Next line: " + nextLine)
 	for nextLine != "" {
 		key, val, _ := strings.Cut(nextLine, ": ")
 		headers[strings.ToLower(key)] = val
 
 		nextLine = readLine(scanner)
+		println("Next line: " + nextLine)
+
 	}
 
 	return headers

@@ -12,9 +12,8 @@ type TCPConnection struct {
 }
 
 func createTCPConnection(conn *net.Conn) *TCPConnection {
-	connection := *conn
-	scanner := bufio.NewScanner(connection)
-	writer := bufio.NewWriter(connection)
+	scanner := bufio.NewScanner(*conn)
+	writer := bufio.NewWriter(*conn)
 
 	return &TCPConnection{scanner: scanner, writer: writer, conn: conn}
 }
