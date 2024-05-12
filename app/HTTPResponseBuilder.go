@@ -13,6 +13,20 @@ func createHTTPResponseBuilder() *HTTPResponseBuilder {
 	return &HTTPResponseBuilder{createEmptyHTTPMessage(emptyHTTPResponseLine())}
 }
 
+func createSuccessHTTPResponseBuilder() *HTTPResponseBuilder {
+	return createHTTPResponseBuilder().
+		setVersion("HTTP/1.1").
+		setStatusCode(200).
+		setStatusText("OK")
+}
+
+func createNotFoundHTTPResponseBuilder() *HTTPResponseBuilder {
+	return createHTTPResponseBuilder().
+		setVersion("HTTP/1.1").
+		setStatusCode(404).
+		setStatusText("Not Found")
+}
+
 func (builder *HTTPResponseBuilder) setVersion(version string) *HTTPResponseBuilder {
 	builder.httpMessage.startLine = getHTTPResponseLine(builder.httpMessage).setVersion(version)
 

@@ -25,9 +25,12 @@ func (requestLine HTTPRequestLine) ToString() string {
 
 func (requestLine HTTPRequestLine) FromString(message string) HTTPStartLine {
 	split := strings.Split(message, " ")
-	method, path, version := split[0], split[1], split[2]
 
-	return HTTPRequestLine{method: method, path: path, version: version}
+	if len(split) == 0 {
+		return nil
+	}
+
+	return HTTPRequestLine{method: split[0], path: split[1], version: split[2]}
 }
 
 func parseHTTPRequest(scanner *bufio.Scanner) *HTTPMessage {
