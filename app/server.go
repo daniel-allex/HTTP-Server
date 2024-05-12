@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net"
 )
 
 func responseFromRequest(request *HTTPMessage, filePath string) *HTTPMessage {
@@ -26,6 +27,11 @@ func handleClient(connection *HTTPConnection, filePath string) {
 	}
 }
 
+func closeListener(listener *net.Listener) {
+	err := (*listener).Close()
+	validateResult("Failed to close listener", err)
+}
+
 func main() {
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Println("Logs from your program will appear here!")
@@ -34,6 +40,8 @@ func main() {
 	flag.Parse()
 
 	listener := listenTCPConnection("0.0.0.0:4221")
+	defer closeListener(listener)
+
 	for {
 		conn := acceptHTTPConnection(listener)
 		go handleClient(conn, *filePath)

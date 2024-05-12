@@ -32,8 +32,7 @@ func acceptTCPConnection(listener *net.Listener) *TCPConnection {
 }
 
 func (conn *TCPConnection) Close() {
-	connection := *conn.conn
-	err := connection.Close()
+	err := (*conn.conn).Close()
 	validateResult("Failed to close connection", err)
 }
 

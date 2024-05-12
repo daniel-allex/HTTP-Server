@@ -32,6 +32,8 @@ func (httpMessage *HTTPMessage) writeHTTPMessage(writer *bufio.Writer) {
 func (httpMessage *HTTPMessage) printHTTPMessage() {
 	writer := bufio.NewWriter(os.Stdout)
 	httpMessage.writeHTTPMessage(writer)
+	println()
+	writer.Flush()
 }
 
 func (httpMessage *HTTPMessage) parseStartLine(scanner *bufio.Scanner) HTTPStartLine {
@@ -96,7 +98,6 @@ func createEmptyHTTPMessage(startLine HTTPStartLine) *HTTPMessage {
 func (httpMessage *HTTPMessage) scanHTTPMessage(scanner *bufio.Scanner) {
 	httpMessage.startLine = httpMessage.parseStartLine(scanner)
 	httpMessage.headers = parseHeaders(scanner)
-	// readLine(scanner)
 	// httpMessage.body = httpMessage.parseBody(scanner)
 }
 
