@@ -51,58 +51,61 @@ func printInputOutput(request *HTTPMessage, response *HTTPMessage) {
 
 }
 
-func (httpMessage *HTTPMessage) parseStartLine(scanner *bufio.Scanner) HTTPStartLine {
-	firstLine := readLine(scanner)
+func (httpMessage *HTTPMessage) parseStartLine(reader *bufio.Reader) HTTPStartLine {
+	firstLine := readLine(reader)
 	return httpMessage.startLine.FromString(firstLine)
 }
 
-func parseHeaders(scanner *bufio.Scanner) map[string]string {
+func parseHeaders(reader *bufio.Reader) map[string]string {
 	headers := map[string]string{}
 
-	nextLine := readLine(scanner)
+	nextLine := readLine(reader)
 	for nextLine != "" {
 		key, val, _ := strings.Cut(nextLine, ": ")
 		headers[strings.ToLower(key)] = val
 
-		nextLine = readLine(scanner)
+		nextLine = readLine(reader)
 	}
 
 	return headers
 }
 
-func parseBodyByChunks(scanner *bufio.Scanner) string {
+func parseBodyByChunks(reader *bufio.Reader) string {
 	var sb strings.Builder
-	for nextBytes := readLine(scanner); nextBytes != "0"; {
-		sb.WriteString(readLine(scanner))
+	for nextBytes := readLine(reader); nextBytes != "0"; {
+		sb.WriteString(readLine(reader))
 	}
 
-	readLine(scanner)
+	readLine(reader)
 
 	return sb.String()
 }
 
-func parseBodyByLength(scanner *bufio.Scanner, length int) string {
-	return (readLine(scanner))[:length]
+func parseBodyByLength(reader *bufio.Reader, length int) string {
+	peek, err := reader.Peek(length)
+	validateResult("Failed to peek reader when parsing body by length", err)
+
+	return string(peek)
 }
 
-func parseBodyNoEOF(scanner *bufio.Scanner) string {
-	return readLine(scanner)
+func parseBodyNoEOF(reader *bufio.Reader) string {
+	return readLine(reader)
 }
 
-func (httpMessage *HTTPMessage) parseBody(scanner *bufio.Scanner) string {
-	encodingType, hasEncoding := httpMessage.headers["Transfer-Encoding"]
+func (httpMessage *HTTPMessage) parseBody(reader *bufio.Reader) string {
+	encodingType, hasEncoding := httpMessage.headers["transfer-encoding"]
 	if hasEncoding && encodingType == "chunked" {
-		return parseBodyByChunks(scanner)
+		return parseBodyByChunks(reader)
 	}
 
-	contentLength, hasLength := httpMessage.headers["ContentLength"]
+	contentLength, hasLength := httpMessage.headers["content-length"]
 	if hasLength {
 		length, err := strconv.Atoi(contentLength)
 		validateResult("Failed to convert content length to int", err)
-		return parseBodyByLength(scanner, length)
+		return parseBodyByLength(reader, length)
 	}
 
-	return parseBodyNoEOF(scanner)
+	return ""
 }
 
 func createEmptyHTTPMessage(startLine HTTPStartLine) *HTTPMessage {
@@ -110,15 +113,15 @@ func createEmptyHTTPMessage(startLine HTTPStartLine) *HTTPMessage {
 	return &HTTPMessage{startLine: startLine, headers: headers, body: ""}
 }
 
-func (httpMessage *HTTPMessage) scanHTTPMessage(scanner *bufio.Scanner) {
-	httpMessage.startLine = httpMessage.parseStartLine(scanner)
-	httpMessage.headers = parseHeaders(scanner)
-	// httpMessage.body = httpMessage.parseBody(scanner)
+func (httpMessage *HTTPMessage) readHTTPMessage(reader *bufio.Reader) {
+	httpMessage.startLine = httpMessage.parseStartLine(reader)
+	httpMessage.headers = parseHeaders(reader)
+	httpMessage.body = httpMessage.parseBody(reader)
 }
 
-func parseHTTPMessage(startLine HTTPStartLine, scanner *bufio.Scanner) *HTTPMessage {
+func parseHTTPMessage(startLine HTTPStartLine, reader *bufio.Reader) *HTTPMessage {
 	httpMessage := createEmptyHTTPMessage(startLine)
-	httpMessage.scanHTTPMessage(scanner)
+	httpMessage.readHTTPMessage(reader)
 
 	return httpMessage
 }

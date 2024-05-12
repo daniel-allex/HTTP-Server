@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strings"
 )
 
 func validateResult(message string, err error) {
@@ -37,7 +38,13 @@ func writeLine(writer *bufio.Writer, message string) {
 	write(writer, message+"\r\n")
 }
 
-func readLine(scanner *bufio.Scanner) string {
-	scanner.Scan()
-	return scanner.Text()
+func readLine(reader *bufio.Reader) string {
+	res, err := reader.ReadString('\n')
+
+	if err != nil {
+		return ""
+	}
+
+	return strings.TrimRight(res, "\r\n")
+
 }

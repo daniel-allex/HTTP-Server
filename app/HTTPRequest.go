@@ -41,8 +41,8 @@ func (requestLine HTTPRequestLine) FromString(message string) HTTPStartLine {
 	return HTTPRequestLine{method: method, path: path, version: version}
 }
 
-func parseHTTPRequest(scanner *bufio.Scanner) *HTTPMessage {
-	return parseHTTPMessage(emptyHTTPRequestLine(), scanner)
+func parseHTTPRequest(reader *bufio.Reader) *HTTPMessage {
+	return parseHTTPMessage(emptyHTTPRequestLine(), reader)
 }
 
 func getHTTPRequestLine(httpMessage *HTTPMessage) HTTPRequestLine {

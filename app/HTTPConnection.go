@@ -11,7 +11,7 @@ func acceptHTTPConnection(listener *net.Listener) *HTTPConnection {
 }
 
 func (httpConn *HTTPConnection) nextRequest() *HTTPMessage {
-	return parseHTTPRequest(httpConn.conn.Scanner())
+	return parseHTTPRequest(httpConn.conn.Reader())
 }
 
 func (httpConn *HTTPConnection) sendResponse(httpMessage *HTTPMessage) {

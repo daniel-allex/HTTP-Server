@@ -6,16 +6,16 @@ import (
 )
 
 type TCPConnection struct {
-	scanner *bufio.Scanner
-	writer  *bufio.Writer
-	conn    *net.Conn
+	reader *bufio.Reader
+	writer *bufio.Writer
+	conn   *net.Conn
 }
 
 func createTCPConnection(conn *net.Conn) *TCPConnection {
-	scanner := bufio.NewScanner(*conn)
+	reader := bufio.NewReader(*conn)
 	writer := bufio.NewWriter(*conn)
 
-	return &TCPConnection{scanner: scanner, writer: writer, conn: conn}
+	return &TCPConnection{reader: reader, writer: writer, conn: conn}
 }
 
 func listenTCPConnection(address string) *net.Listener {
@@ -35,8 +35,8 @@ func (conn *TCPConnection) Close() {
 	validateResult("Failed to close connection", err)
 }
 
-func (conn *TCPConnection) Scanner() *bufio.Scanner {
-	return conn.scanner
+func (conn *TCPConnection) Reader() *bufio.Reader {
+	return conn.reader
 }
 
 func (conn *TCPConnection) Writer() *bufio.Writer {

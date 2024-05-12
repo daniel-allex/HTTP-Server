@@ -38,8 +38,20 @@ func userAgentEndPoint(request *HTTPMessage) *HTTPMessage {
 	return createSuccessHTTPResponseBuilder().setBody(res).build()
 }
 
-func filesEndPoint(relPath string, absPath string) *HTTPMessage {
-	filePath := absPath + "/" + relPath
+func filesPostEndPoint(filePath string, request *HTTPMessage) *HTTPMessage {
+	err := os.WriteFile(filePath, []byte(request.body), 0666)
+
+	if err != nil {
+		return createNotFoundHTTPResponseBuilder().build()
+	}
+
+	return createSuccessHTTPResponseBuilder().
+		setStatusCode(201).
+		setStatusText("Created").
+		build()
+}
+
+func filesGetEndPoint(filePath string, request *HTTPMessage) *HTTPMessage {
 	fileContent, err := os.ReadFile(filePath)
 
 	if err != nil {
@@ -52,13 +64,25 @@ func filesEndPoint(relPath string, absPath string) *HTTPMessage {
 		build()
 }
 
+func filesEndPoint(filePath string, request *HTTPMessage) *HTTPMessage {
+	requestLine := getHTTPRequestLine(request)
+
+	if requestLine.method == "POST" {
+		return filesPostEndPoint(filePath, request)
+	} else if requestLine.method == "GET" {
+		return filesGetEndPoint(filePath, request)
+	}
+
+	return createNotFoundHTTPResponseBuilder().build()
+}
+
 func endPointDataToResponse(endPointData EndPointData, request *HTTPMessage, filePath string) *HTTPMessage {
 	if endPointData.endPoint == "echo" {
 		return echoEndPoint(endPointData.relPath)
 	} else if endPointData.endPoint == "user-agent" {
 		return userAgentEndPoint(request)
 	} else if endPointData.endPoint == "files" {
-		return filesEndPoint(endPointData.relPath, filePath)
+		return filesEndPoint(filePath+"/"+endPointData.relPath, request)
 	} else if endPointData.endPoint == "" && endPointData.relPath == "" {
 		return rootEndPoint()
 	} else {
