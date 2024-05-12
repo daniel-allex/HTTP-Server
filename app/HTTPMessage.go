@@ -53,8 +53,6 @@ func printInputOutput(request *HTTPMessage, response *HTTPMessage) {
 
 func (httpMessage *HTTPMessage) parseStartLine(scanner *bufio.Scanner) HTTPStartLine {
 	firstLine := readLine(scanner)
-	println("First Line:")
-	println(firstLine)
 	return httpMessage.startLine.FromString(firstLine)
 }
 
@@ -62,14 +60,11 @@ func parseHeaders(scanner *bufio.Scanner) map[string]string {
 	headers := map[string]string{}
 
 	nextLine := readLine(scanner)
-	println("Next line: " + nextLine)
 	for nextLine != "" {
 		key, val, _ := strings.Cut(nextLine, ": ")
 		headers[strings.ToLower(key)] = val
 
 		nextLine = readLine(scanner)
-		println("Next line: " + nextLine)
-
 	}
 
 	return headers
