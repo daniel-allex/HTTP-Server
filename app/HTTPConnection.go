@@ -25,12 +25,12 @@ func (httpConn *HTTPConnection) sendResponse(httpMessage *HTTPMessage) error {
 	writer := httpConn.conn.Writer()
 	err := httpMessage.writeHTTPMessage(writer)
 	if err != nil {
-		return fmt.Errorf("failed to send http response: %v", err)
+		return fmt.Errorf("failed to send http response: %w", err)
 	}
 
 	err = writer.Flush()
 	if err != nil {
-		return fmt.Errorf("failed to send http response: %v", err)
+		return fmt.Errorf("failed to send http response: %w", err)
 	}
 
 	return nil
