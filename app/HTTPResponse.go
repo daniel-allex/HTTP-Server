@@ -27,9 +27,7 @@ func (responseLine HTTPResponseLine) ToString() string {
 func (responseLine HTTPResponseLine) FromString(message string) HTTPStartLine {
 	split := strings.Split(message, " ")
 	version, statusCode, statusText := split[0], split[1], split[2]
-	code, err := strconv.Atoi(statusCode)
-
-	validateResult("Failed to convert status code from string to int", err)
+	code, _ := strconv.Atoi(statusCode)
 
 	return HTTPResponseLine{version: version, statusCode: code, statusText: statusText}
 }

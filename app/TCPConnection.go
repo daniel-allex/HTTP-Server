@@ -18,21 +18,21 @@ func createTCPConnection(conn *net.Conn) *TCPConnection {
 	return &TCPConnection{reader: reader, writer: writer, conn: conn}
 }
 
-func listenTCPConnection(address string) *net.Listener {
+func listenTCPConnection(address string) (*net.Listener, error) {
 	listener, err := net.Listen("tcp", address)
-	validateResult("Failed to bind to port "+address, err)
-	return &listener
+	return &listener, err
 }
 
-func acceptTCPConnection(listener *net.Listener) *TCPConnection {
+func acceptTCPConnection(listener *net.Listener) (*TCPConnection, error) {
 	conn, err := (*listener).Accept()
-	validateResult("Error accepting connection", err)
-	return createTCPConnection(&conn)
+
+	return createTCPConnection(&conn), err
 }
 
-func (conn *TCPConnection) Close() {
+func (conn *TCPConnection) Close() error {
 	err := (*conn.conn).Close()
-	validateResult("Failed to close connection", err)
+
+	return err
 }
 
 func (conn *TCPConnection) Reader() *bufio.Reader {

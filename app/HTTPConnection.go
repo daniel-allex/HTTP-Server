@@ -1,26 +1,41 @@
 package main
 
-import "net"
+import (
+	"fmt"
+	"net"
+)
 
 type HTTPConnection struct {
 	conn *TCPConnection
 }
 
-func acceptHTTPConnection(listener *net.Listener) *HTTPConnection {
-	return &HTTPConnection{acceptTCPConnection(listener)}
+func acceptHTTPConnection(listener *net.Listener) (*HTTPConnection, error) {
+	connection, err := acceptTCPConnection(listener)
+	if err != nil {
+		return nil, err
+	}
+	return &HTTPConnection{connection}, nil
 }
 
-func (httpConn *HTTPConnection) nextRequest() *HTTPMessage {
+func (httpConn *HTTPConnection) nextRequest() (*HTTPMessage, error) {
 	return parseHTTPRequest(httpConn.conn.Reader())
 }
 
-func (httpConn *HTTPConnection) sendResponse(httpMessage *HTTPMessage) {
+func (httpConn *HTTPConnection) sendResponse(httpMessage *HTTPMessage) error {
 	writer := httpConn.conn.Writer()
-	httpMessage.writeHTTPMessage(writer)
-	err := writer.Flush()
-	validateResult("Failed to flush response", err)
+	err := httpMessage.writeHTTPMessage(writer)
+	if err != nil {
+		return fmt.Errorf("failed to send http response: %v", err)
+	}
+
+	err = writer.Flush()
+	if err != nil {
+		return fmt.Errorf("failed to send http response: %v", err)
+	}
+
+	return nil
 }
 
-func (httpConn *HTTPConnection) Close() {
-	httpConn.conn.Close()
+func (httpConn *HTTPConnection) Close() error {
+	return httpConn.conn.Close()
 }

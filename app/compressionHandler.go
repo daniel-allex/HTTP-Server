@@ -6,20 +6,23 @@ import (
 	"strings"
 )
 
-type compressFunc func(string) *string
+type compressFunc func(string) (string, error)
 
-func gzipCompression(body string) *string {
+func gzipCompression(body string) (string, error) {
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
 	_, err := gz.Write([]byte(body))
-	gz.Close()
-
 	if err != nil {
-		return nil
+		return "", err
+	}
+
+	err = gz.Close()
+	if err != nil {
+		return "", err
 	}
 
 	res := buf.String()
-	return &res
+	return res, nil
 }
 
 var compressionFuncs = map[string]compressFunc{
@@ -28,11 +31,14 @@ var compressionFuncs = map[string]compressFunc{
 
 func (builder *HTTPResponseBuilder) tryCompression(compressType string) (*HTTPResponseBuilder, bool) {
 	if compressString, ok := compressionFuncs[compressType]; ok {
-		res := compressString(builder.httpMessage.body)
+		res, err := compressString(builder.httpMessage.body)
 
-		if res != nil {
-			return builder.setHeader("content-encoding", compressType).setBody(*res), true
+		if err != nil {
+			warn("Failed to compress with " + compressType + ": " + err.Error())
+			return nil, false
 		}
+
+		return builder.setHeader("content-encoding", compressType).setBody(res), true
 	}
 
 	return builder, false
@@ -45,8 +51,6 @@ func (builder *HTTPResponseBuilder) compress(request *HTTPMessage) *HTTPResponse
 		for _, compressType := range compressTypes {
 			if _, ok = builder.tryCompression(compressType); ok {
 				return builder
-			} else {
-				warn("Failed to compress with " + compressType)
 			}
 		}
 	}

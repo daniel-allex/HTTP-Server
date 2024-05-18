@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"strings"
 )
@@ -10,9 +11,9 @@ type EndPointData struct {
 	relPath  string
 }
 
-func getEndPointData(absPath string) *EndPointData {
+func getEndPointData(absPath string) (EndPointData, error) {
 	if len(absPath) == 0 || absPath[0] != '/' {
-		return nil
+		return EndPointData{}, errors.New("invalid end point")
 	}
 
 	endPoint := ""
@@ -21,7 +22,7 @@ func getEndPointData(absPath string) *EndPointData {
 		endPoint, relPath, _ = strings.Cut(absPath[1:], "/")
 	}
 
-	return &EndPointData{endPoint: endPoint, relPath: relPath}
+	return EndPointData{endPoint: endPoint, relPath: relPath}, nil
 }
 
 func rootEndPoint() *HTTPResponseBuilder {
@@ -34,7 +35,11 @@ func echoEndPoint(relPath string) *HTTPResponseBuilder {
 
 func userAgentEndPoint(request *HTTPMessage) *HTTPResponseBuilder {
 	res, ok := request.headers["user-agent"]
-	exceptIfNotOk("User agent not in headers", ok)
+
+	if !ok {
+		return createNotFoundHTTPResponseBuilder().setBody("user-agent not a valid header")
+	}
+
 	return createSuccessHTTPResponseBuilder().setBody(res)
 }
 
@@ -42,7 +47,7 @@ func filesPostEndPoint(filePath string, request *HTTPMessage) *HTTPResponseBuild
 	err := os.WriteFile(filePath, []byte(request.body), 0666)
 
 	if err != nil {
-		return createNotFoundHTTPResponseBuilder()
+		return createNotFoundHTTPResponseBuilder().setBody("failed to write file")
 	}
 
 	return createSuccessHTTPResponseBuilder().
@@ -63,7 +68,11 @@ func filesGetEndPoint(filePath string, request *HTTPMessage) *HTTPResponseBuilde
 }
 
 func filesEndPoint(filePath string, request *HTTPMessage) *HTTPResponseBuilder {
-	requestLine := getHTTPRequestLine(request)
+	requestLine, ok := getHTTPRequestLine(request)
+
+	if !ok {
+		return createNotFoundHTTPResponseBuilder()
+	}
 
 	if requestLine.method == "POST" {
 		return filesPostEndPoint(filePath, request)

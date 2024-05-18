@@ -41,13 +41,11 @@ func (requestLine HTTPRequestLine) FromString(message string) HTTPStartLine {
 	return HTTPRequestLine{method: method, path: path, version: version}
 }
 
-func parseHTTPRequest(reader *bufio.Reader) *HTTPMessage {
+func parseHTTPRequest(reader *bufio.Reader) (*HTTPMessage, error) {
 	return parseHTTPMessage(emptyHTTPRequestLine(), reader)
 }
 
-func getHTTPRequestLine(httpMessage *HTTPMessage) HTTPRequestLine {
+func getHTTPRequestLine(httpMessage *HTTPMessage) (HTTPRequestLine, bool) {
 	requestLine, ok := httpMessage.startLine.(HTTPRequestLine)
-	exceptIfNotOk("Failed to cast HTTPStartLine to HTTPRequestLine", ok)
-
-	return requestLine
+	return requestLine, ok
 }

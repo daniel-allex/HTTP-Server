@@ -7,27 +7,41 @@ import (
 )
 
 func responseFromRequest(request *HTTPMessage, filePath string) *HTTPMessage {
-	requestLine := getHTTPRequestLine(request)
-	endPointData := getEndPointData(requestLine.path)
-
-	if endPointData == nil {
+	requestLine, ok := getHTTPRequestLine(request)
+	if !ok {
 		return createNotFoundHTTPResponseBuilder().build()
 	}
 
-	return endPointDataToResponseBuilder(*endPointData, request, filePath).compress(request).build()
+	endPointData, err := getEndPointData(requestLine.path)
+
+	if err != nil {
+		return createNotFoundHTTPResponseBuilder().build()
+	}
+
+	return endPointDataToResponseBuilder(endPointData, request, filePath).compress(request).build()
 }
 
 func handleClient(connection *HTTPConnection, filePath string) {
 	defer connection.Close()
 
-	request := connection.nextRequest()
+	request, err := connection.nextRequest()
+	if err != nil {
+		fmt.Println("failed to respond to request: %w", err)
+	}
+
 	response := responseFromRequest(request, filePath)
-	connection.sendResponse(response)
+	err = connection.sendResponse(response)
+	if err != nil {
+		fmt.Println("failed to respond to request: %w", err)
+	}
 }
 
 func closeListener(listener *net.Listener) {
 	err := (*listener).Close()
-	validateResult("Failed to close listener", err)
+
+	if err != nil {
+		fmt.Println("failed to close listener: %w", err)
+	}
 }
 
 func main() {
@@ -37,11 +51,19 @@ func main() {
 	filePath := flag.String("directory", "/", "an absolute path to the file system")
 	flag.Parse()
 
-	listener := listenTCPConnection("0.0.0.0:4221")
+	listener, err := listenTCPConnection("0.0.0.0:4221")
+	if err != nil {
+		fmt.Println("failed to listen for TCP connection: %w", err)
+	}
+
 	defer closeListener(listener)
 
 	for {
-		conn := acceptHTTPConnection(listener)
+		conn, err := acceptHTTPConnection(listener)
+		if err != nil {
+			fmt.Println("failed to accept HTTP connection: %w", err)
+		}
+
 		go handleClient(conn, *filePath)
 	}
 }

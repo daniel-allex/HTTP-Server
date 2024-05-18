@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -18,37 +19,85 @@ type HTTPMessage struct {
 	body      string
 }
 
-func (httpMessage *HTTPMessage) writeHTTPMessage(writer *bufio.Writer) {
-	writeLine(writer, httpMessage.startLine.ToString())
-
-	for k, v := range httpMessage.headers {
-		writeLine(writer, k+": "+v)
+func (httpMessage *HTTPMessage) writeHTTPMessage(writer *bufio.Writer) error {
+	err := writeLine(writer, httpMessage.startLine.ToString())
+	errorMessage := "failed to write http message"
+	if err != nil {
+		return fmt.Errorf("%v: %v", errorMessage, err)
 	}
 
-	writeLine(writer, "")
-	write(writer, httpMessage.body)
+	for k, v := range httpMessage.headers {
+		err = writeLine(writer, k+": "+v)
+		if err != nil {
+			return fmt.Errorf("%v: %v", errorMessage, err)
+		}
+	}
+
+	err = writeLine(writer, "")
+	if err != nil {
+		return fmt.Errorf("%v: %v", errorMessage, err)
+	}
+
+	_, err = writer.WriteString(httpMessage.body)
+	if err != nil {
+		return fmt.Errorf("%v: %v", errorMessage, err)
+	}
+
+	return nil
 }
 
-func (httpMessage *HTTPMessage) printHTTPMessage() {
+func (httpMessage *HTTPMessage) printHTTPMessage() error {
 	writer := bufio.NewWriter(os.Stdout)
-	httpMessage.writeHTTPMessage(writer)
-	err := writer.Flush()
-	validateResult("Failed to flush writer to STDOUT", err)
+	errorMessage := "failed to print http message"
+
+	err := httpMessage.writeHTTPMessage(writer)
+	if err != nil {
+		return fmt.Errorf("%v: %v", errorMessage, err)
+	}
+
+	err = writer.Flush()
+	if err != nil {
+		return fmt.Errorf("%v: %v", errorMessage, err)
+	}
+
+	return nil
 }
 
-func printInputOutput(request *HTTPMessage, response *HTTPMessage) {
+func printInputOutput(request *HTTPMessage, response *HTTPMessage) error {
 	writer := bufio.NewWriter(os.Stdout)
-	write(writer, "==============================\n")
-	write(writer, "Request:\n")
-	request.writeHTTPMessage(writer)
-	write(writer, "------------------------------\n")
-	write(writer, "Response:\n")
-	response.writeHTTPMessage(writer)
-	write(writer, "==============================\n")
+	errorMessage := "failed to print http message input output"
 
-	err := writer.Flush()
-	validateResult("Failed to flush writer to STDOUT", err)
+	_, err := writer.WriteString("==============================\nRequest:\n")
+	if err != nil {
+		return fmt.Errorf("%v: %v", errorMessage, err)
+	}
 
+	err = request.writeHTTPMessage(writer)
+	if err != nil {
+		return fmt.Errorf("%v: %v", errorMessage, err)
+	}
+
+	_, err = writer.WriteString("==============================\nResponse:\n")
+	if err != nil {
+		return fmt.Errorf("%v: %v", errorMessage, err)
+	}
+
+	err = response.writeHTTPMessage(writer)
+	if err != nil {
+		return fmt.Errorf("%v: %v", errorMessage, err)
+	}
+
+	_, err = writer.WriteString("==============================\n")
+	if err != nil {
+		return fmt.Errorf("%v: %v", errorMessage, err)
+	}
+
+	err = writer.Flush()
+	if err != nil {
+		return fmt.Errorf("%v: %v", errorMessage, err)
+	}
+
+	return nil
 }
 
 func (httpMessage *HTTPMessage) parseStartLine(reader *bufio.Reader) HTTPStartLine {
@@ -81,31 +130,38 @@ func parseBodyByChunks(reader *bufio.Reader) string {
 	return sb.String()
 }
 
-func parseBodyByLength(reader *bufio.Reader, length int) string {
+func parseBodyByLength(reader *bufio.Reader, length int) (string, error) {
 	peek, err := reader.Peek(length)
-	validateResult("Failed to peek reader when parsing body by length", err)
 
-	return string(peek)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse body by length: %v", err)
+	}
+
+	return string(peek), nil
 }
 
 func parseBodyNoEOF(reader *bufio.Reader) string {
 	return readLine(reader)
 }
 
-func (httpMessage *HTTPMessage) parseBody(reader *bufio.Reader) string {
+func (httpMessage *HTTPMessage) parseBody(reader *bufio.Reader) (string, error) {
 	encodingType, hasEncoding := httpMessage.headers["transfer-encoding"]
 	if hasEncoding && encodingType == "chunked" {
-		return parseBodyByChunks(reader)
+		return parseBodyByChunks(reader), nil
 	}
 
 	contentLength, hasLength := httpMessage.headers["content-length"]
 	if hasLength {
 		length, err := strconv.Atoi(contentLength)
-		validateResult("Failed to convert content length to int", err)
+
+		if err != nil {
+			return "", fmt.Errorf("failed to parse body: %v", err)
+		}
+
 		return parseBodyByLength(reader, length)
 	}
 
-	return ""
+	return "", nil
 }
 
 func createEmptyHTTPMessage(startLine HTTPStartLine) *HTTPMessage {
@@ -113,15 +169,26 @@ func createEmptyHTTPMessage(startLine HTTPStartLine) *HTTPMessage {
 	return &HTTPMessage{startLine: startLine, headers: headers, body: ""}
 }
 
-func (httpMessage *HTTPMessage) readHTTPMessage(reader *bufio.Reader) {
+func (httpMessage *HTTPMessage) readHTTPMessage(reader *bufio.Reader) error {
 	httpMessage.startLine = httpMessage.parseStartLine(reader)
 	httpMessage.headers = parseHeaders(reader)
-	httpMessage.body = httpMessage.parseBody(reader)
+	body, err := httpMessage.parseBody(reader)
+
+	if err != nil {
+		return fmt.Errorf("failed to read http message: %v", err)
+	}
+
+	httpMessage.body = body
+
+	return nil
 }
 
-func parseHTTPMessage(startLine HTTPStartLine, reader *bufio.Reader) *HTTPMessage {
+func parseHTTPMessage(startLine HTTPStartLine, reader *bufio.Reader) (*HTTPMessage, error) {
 	httpMessage := createEmptyHTTPMessage(startLine)
-	httpMessage.readHTTPMessage(reader)
+	err := httpMessage.readHTTPMessage(reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse http message: %v", err)
+	}
 
-	return httpMessage
+	return httpMessage, nil
 }
